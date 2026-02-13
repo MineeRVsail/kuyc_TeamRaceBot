@@ -159,7 +159,25 @@ class MatchResultView(discord.ui.View):
             result_msg.append(f"🅱️ {p['name']}: {old} → **{new}** ({sign}{diff})")
         await update_leaderboard_display()
         embed = discord.Embed(title="試合結果確定", description="\n".join(result_msg), color=0xffd700)
-        await interaction.channel.send(embed=embed)
+        
+        # 1. 飛ばしたいチャンネルのID（さっきコピーした数字）
+        RESULT_CHANNEL_ID = 1471854264543609018 
+        
+        # 2. チャンネルを取得する
+        target_channel = interaction.client.get_channel(RESULT_CHANNEL_ID)
+        
+        if target_channel:
+            # 指定したチャンネルにEmbedを送る
+            # (viewがないなら view=... は書かなくてOKです)
+            await target_channel.send(embed=embed)
+            
+            # 元のチャンネル（募集した場所）には「あっちに出したよ」とだけ伝える
+            await interaction.response.send_message(f"試合が始まります！結果入力は {target_channel.mention} で行ってください。", ephemeral=True)
+        else:
+            # エラー防止：もしIDが間違ってたら元の場所に送る
+            await interaction.channel.send(embed=embed)
+
+        # ▲ここまで▲
     @discord.ui.button(label="Team A Win", style=discord.ButtonStyle.primary, emoji="🅰️")
     async def win_a(self, interaction, button): await self.process_result(interaction, "A")
     @discord.ui.button(label="Team B Win", style=discord.ButtonStyle.danger, emoji="🅱️")
